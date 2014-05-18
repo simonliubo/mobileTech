@@ -23,6 +23,7 @@ A useful tools or tips list for mobile web application developing
  
  [移动设备适配库](http://51degrees.codeplex.com/ "移动设备适配库")
  
+ [移动设备适配库2](http://detectmobilebrowsers.com/ "移动设备适配库2")
  
  [viewport与设备尺寸在线检测器](https://deviceatlas.com/device-data/devices "viewport与设备尺寸在线检测器")
  
@@ -105,6 +106,10 @@ Firefox 浏览器内置了 `自定义设计视图` 的功能，可以通过 `Fir
 [使用border-image实现类似iOS7的1px底边](https://github.com/maxzhang/maxzhang.github.com/issues/4 "ava")
 
 [移动端web页面使用position:fixed问题总结](https://github.com/maxzhang/maxzhang.github.com/issues/2 "ava")
+
+[移动Web开发实践——解决position:fixed自适应BUG](https://github.com/maxzhang/maxzhang.github.com/issues/11 "ava")
+
+[移动手机浏览器m3u8格式视频流播放支持程度测试](https://github.com/maxzhang/maxzhang.github.com/issues/19 "ava")
 
 
 ##本资料很多引用了指尖上的js系列
@@ -241,6 +246,17 @@ Media Query 相信大部分人已经使用过了。其实 JavaScript可以配合
 也可以通过获取 CSS 值来使用 Media Query 判断设备情况，详情请看：[JavaScript 依据 CSS Media Queries 判断设备的方法](http://yujiangshui.com/use-javascript-css-media-queries-detect-device-state/)。
 
 
+###rem最佳实践
+
+rem是非常好用的一个属性，可以根据html来设定基准值，而且兼容性也很不错。不过有的时候还是需要对一些莫名其妙的浏览器优雅降级。以下是两个实践
+
+1. <http://jsbin.com/vaqexuge/4/edit>  这有个demo，发现chrome当font-size小于12时，rem会按照12来计算。因此设置基准值要考虑这一点
+2. 可以用以下的代码片段保证在低端浏览器下也不会出问题
+
+	
+	html { font-size: 62.5%; } 
+	body { font-size: 14px; font-size: 1.4rem; } /* =14px */
+	h1   { font-size: 24px; font-size: 2.4rem; } /* =24px */
  
 
 ###被点击元素的外观变化，可以使用样式来设定：
@@ -310,8 +326,41 @@ Media Query 相信大部分人已经使用过了。其实 JavaScript可以配合
 
 <http://www.iunbug.com/archives/2013/04/23/798.html>
 
+###如何实现打开已安装的app，若未安装则引导用户安装?
 
+来自 <http://gallery.kissyui.com/redirectToNative/1.2/guide/index.html> kissy mobile
+通过iframe src发送请求打开app自定义url scheme，如taobao://home（淘宝首页） 、etao://scan（一淘扫描）);
+如果安装了客户端则会直接唤起，直接唤起后，之前浏览器窗口（或者扫码工具的webview）推入后台；
+如果在指定的时间内客户端没有被唤起，则js重定向到app下载地址。
+大概实现代码如下	
 
+	goToNative:function(){
+	
+		if(!body) {
+                setTimeout(function(){
+                    doc.body.appendChild(iframe);
+                }, 0);
+            } else {
+                body.appendChild(iframe);
+            }
+	
+	setTimeout(function() {
+                doc.body.removeChild(iframe);
+                gotoDownload(startTime);//去下载，下载链接一般是itunes app store或者apk文件链接
+                /**
+                 * 测试时间设置小于800ms时，在android下的UC浏览器会打开native app时并下载apk，
+                 * 测试android+UC下打开native的时间最好大于800ms;
+                 */
+            }, 800);
+	}
+
+			
+需要注意的是 如果是android chrome 25版本以后，在iframe src不会发送请求，
+原因如下<https://developers.google.com/chrome/mobile/docs/intents> ，通过location href使用intent机制拉起客户端可行并且当前页面不跳转。
+
+	window.location = 'intent://' + schemeUrl + '#Intent;scheme=' + scheme + ';package=' + self.package + ';end';
+
+	
 ###active的兼容(来自薛端阳)
 
 今天发现，要让a链接的CSS active伪类生效，只需要给这个a链接的touch系列的任意事件touchstart/touchend绑定一个空的匿名方法即可hack成功
@@ -343,6 +392,25 @@ Media Query 相信大部分人已经使用过了。其实 JavaScript可以配合
 	/*（设置进行转换的元素的背面在面对用户时是否可见：隐藏）*/
 
  
+###测试是否支持svg图片
+
+	document.implementation.hasFeature("http:// www.w3.org/TR/SVG11/feature#Image", "1.1")
+
+###安卓手机点击锁定页面效果问题
+
+有些安卓手机，页面点击时会停止页面的javascript，css3动画等的执行，这个比较蛋疼。不过可以用阻止默认事件解决。详细见
+<http://stackoverflow.com/questions/10246305/android-browser-touch-events-stop-display-being-updated-inc-canvas-elements-h>
+
+	function touchHandlerDummy(e)
+	{
+	    e.preventDefault();
+	    return false;
+	}
+	document.addEventListener("touchstart", touchHandlerDummy, false);
+	document.addEventListener("touchmove", touchHandlerDummy, false);
+	document.addEventListener("touchend", touchHandlerDummy, false);
+
+	
 ###消除ie10里面的那个叉号
 [IE Pseudo-elements](http://msdn.microsoft.com/en-us/library/windows/apps/hh767361.aspx "article4")
 
@@ -689,8 +757,7 @@ click 事件因为要等待单击确认，会有 300ms 的延迟，体验并不�
 	Skew(*deg) 倾斜角度。skewX 和skewY，可简写为：skew(* , *)
 	translate(*,*) 坐标移动。translateX 和translateY，可简写为：translate(* , *)。
  
- 
-
+	
 ##常见的 iPhone 和 Android 屏幕参数。
 
 * 设备	     分辨率	    设备像素比率
@@ -741,6 +808,14 @@ iPhone 4的一个 CSS 像素实际上表现为一块 2×2 的像素。所以图�
 [HTML5 inputs and attribute support](http://www.miketaylr.com/code/input-type-attr.html)
 
 
+##往返缓存问题
+
+点击浏览器的回退，有时候不会自动执行js，特别是在mobilesafari中。这与**往返缓存(bfcache)**有关系。有很多hack的处理方法，可以参考
+
+<http://stackoverflow.com/questions/24046/the-safari-back-button-problem>
+
+<http://stackoverflow.com/questions/11979156/mobile-safari-back-button>
+
 ##iOS 6 跟 iPhone 5 的那些事
 
 
@@ -761,6 +836,7 @@ iPhone 4的一个 CSS 像素实际上表现为一块 2×2 的像素。所以图�
 	<input type=file accept="image/*">
 
 不支持其他类型的文件 ，如音频，Pages文档或PDF文件。 也没有getUserMedia摄像头的实时流媒体支持。
+
 
 ###可以使用的 HTML5 高级 api
 
@@ -826,9 +902,114 @@ Canvas更新 ：createImageData有一个参数，现在有两个新的功能做�
 
 [iOS 7 的一些坑(英文)](http://www.sencha.com/blog/the-html5-scorecard-the-good-the-bad-and-the-ugly-in-ios7 "ios7的一些bug")
 
+[ios7的一些坑2(英文)](http://www.mobilexweb.com/blog/safari-ios7-html5-problems-apis-review "ios7的一些bug")
 
+
+
+##webview相关
+
+#Cache开启和设置
+
+	browser.getSettings().setAppCacheEnabled(true);
+	browser.getSettings().setAppCachePath("/data/data/[com.packagename]/cache");
+	browser.getSettings().setAppCacheMaxSize(5*1024*1024); // 5MB
+
+#LocalStorage相关设置
+
+	browser.getSettings().setDatabaseEnabled(true);
+	browser.getSettings().setDomStorageEnabled(true);
+	String databasePath = browser.getContext().getDir("databases", Context.MODE_PRIVATE).getPath();
+	browser.getSettings().setDatabasePath(databasePath);//Android　webview的LocalStorage有个问题，关闭APP或者重启后，就清楚了，所以需要browser.getSettings().setDatabase相关的操作，把LocalStoarge存到DB中
+ 
+	myWebView.setWebChromeClient(new WebChromeClient(){
+	　　　 @Override
+	　　　 public void onExceededDatabaseQuota(String url, String databaseIdentifier, long currentQuota, long estimatedSize, long totalUsedQuota, WebStorage.QuotaUpdater quotaUpdater)
+	　　　 {
+	　　　　　　　 quotaUpdater.updateQuota(estimatedSize * 2);
+	　　　 }
+	}
+
+#浏览器自带缩放按钮取消显示
+
+	browser.getSettings().setBuiltInZoomControls(false);
+
+#几个比较好的实践
+
+使用localstorage缓存html
+
+使用lazyload，还要记得lazyload占位图虽然小，但是最好能提前加载到缓存
+
+延时加载执行js
+
+主要原因就在于Android Webview的onPageFinished事件，Android端一般是用这个事件来标识页面加载完成并显示的，也就是说在此之前，会一直loading，但是Android的OnPageFinished事件会在Javascript脚本执行完成之后才会触发。如果在页面中使用JQuery，会在处理完DOM对象，执行完$(document).ready(function() {});事件自会后才会渲染并显示页面。
+
+
+##移动端调适篇
+
+###手机抓包与配host
+
+在PC上，我们可以很方便地配host，但是手机上如何配host，这是一个问题。
+
+这里主要使用fiddler和远程代理，实现手机配host的操作，具体操作如下：
+
+首先，保证PC和移动设备在同一个局域网下；
+
+PC上开启fiddler，并在设置中勾选“allow remote computers to connect”
+
+1. 首先，保证PC和移动设备在同一个局域网下；
+
+2. PC上开启fiddler，并在设置中勾选“allow remote computers to connect”
+![fiddler](https://github.com/hoosin/mobile-web-favorites/raw/master/img/01.png)
+
+3. 手机上设置代理，代理IP为PC的IP地址，端口为8888（这是fiddler的默认端口）。通常手机上可以直接设置代理，如果没有，可以去下载一个叫ProxyDroid的APP来实现代理的设置。
+
+4. 此时你会发现，用手机上网，走的其实是PC上的fiddler，所有的请求包都会在fiddler中列出来，配合willow使用，即可实现配host，甚至是反向代理的操作。
+
+也可以用CCProxy之类软件，还有一种方法就是买一个随身wifi，然后手机连接就可以了！
+
+###高级抓包
+
+[iPhone上使用Burp Suite捕捉HTTPS通信包方法](http://danqingdani.blog.163.com/blog/static/1860941952012112353515306/?suggestedreading&wumii "iPhone上使用Burp Suite捕捉HTTPS通信包方法")
+
+[mobile app 通信分析方法小议（iOS/Android)](http://danqingdani.blog.163.com/blog/static/1860941952012101331848980/ "mobile app 通信分析方法小议（iOS/Android)")
+
+[实时抓取移动设备上的通信包(ADVsock2pipe+Wireshark+nc+tcpdump)](http://danqingdani.blog.163.com/blog/static/1860941952012111954741585/ "实时抓取移动设备上的通信包(ADVsock2pipe+Wireshark+nc+tcpdump)")
+
+
+###静态资源缓存问题
+
+一般用代理软件代理过来的静态资源可以设置nocache避免缓存，但是有的手机比较诡异，会一直缓存住css等资源文件。由于静态资源一般都是用版本号管理的，我们以charles为例子来处理这个问题
+
+charles 选择静态的html页面文件-saveResponse。之后把这个文件保存一下，修改一下版本号。之后继续发请求，
+刚才的html页面文件 右键选择 --map local 选择我们修改过版本号的html文件即ok。这其实也是fiddler远程映射并修改文件的一个应用场景。
 
 ##移动浏览器篇
+
+
+###微信浏览器
+
+因为微信浏览器屏蔽了一部分链接图片，所以需要引导用户去打开新页面，可以用以下方式判断微信浏览器的ua
+
+	function is_weixn(){
+	    var ua = navigator.userAgent.toLowerCase();
+	    if(ua.match(/MicroMessenger/i)=="micromessenger") {
+	        return true;
+	    } else {
+	        return false;
+	    }
+	}
+	
+后端判断也很简单，比如php
+
+	function is_weixin(){
+	    if ( strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') !== false ) {
+	            return true;
+	    }  
+	    return false;
+	}
+
+
+
 	
 ###【UC浏览器】video标签脱离文档流
 
@@ -957,7 +1138,33 @@ demo： <http://maplejan.sinaapp.com/demo/fixed_chromemobile.html>
 
 iscroll的闪动问题也与渲染有关系，可以参考
  [运用webkit绘制渲染页面原理解决iscroll4闪动的问题](http://www.iunbug.com/archives/2012/09/19/411.html "iscroll4")
+[iscroll4升级到5要注意的问题](http://blog.csdn.net/gcz564539969/article/details/9156141 "iscroll5")
 
+
+###iscroll或者滚动类框架滚动时不点击的方法
+
+可以使用以下的解决方案(利用data-setapi)
+
+	<a ontouchmove="this.s=1" ontouchend="this.s || window.open(this.dataset.href),this.s=0" target="_blank" data-href="http://www.hao123.com/topic/pig">黄浦江死猪之谜</a>
+
+也可以用这种方法
+
+
+		$(document).delegate('[data-target]', 'touchmove', function () {
+			$(this).attr('moving','moving');
+
+		})
+		
+
+		$(document).delegate('[data-target]', 'touchend', function () {
+			if ($(this).attr('moving') !== 'moving') {
+			 //做你想做的。。
+				$(this).attr('moving', 'notMoving');
+			} else {
+				$(this).attr('moving', 'notMoving');
+			}
+
+		})
 
 
 
@@ -991,6 +1198,7 @@ iscroll的闪动问题也与渲染有关系，可以参考
 
 第一个头可以避免跨域问题，第二个头可以方便ajax请求设置content-type等配置项
 
+这个会存在一些安全问题，可以参考这个问题的讨论 <http://www.zhihu.com/question/22992229>
 
 ##PhoneGap 部分
 
@@ -1025,4 +1233,3 @@ iscroll的闪动问题也与渲染有关系，可以参考
 	    var fields       = ["displayName", "name","phoneNumbers"];
 	    navigator.contacts.find(fields, onSuccess, onError,options);  
 	    }
-
